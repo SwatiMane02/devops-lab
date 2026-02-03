@@ -1,13 +1,3 @@
-# Mac
-.DS_Store
-
-# Node
-node_modules
-.env
-
-# Build
-dist
-build
-
-# Editor
-.vscode
+backup/
+backend/node_modules
+backend/.env
