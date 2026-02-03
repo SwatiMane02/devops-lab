@@ -1,183 +1,138 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Link } from "react-router-dom";
+import { GraduationCap, Mail, Lock, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { AlertTriangle, Mail, Lock, Eye, EyeOff, Loader2, CheckCircle, XCircle } from "lucide-react";
-import { loginUser } from "@/services/api";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useToast } from "@/hooks/use-toast";
+import { buildApiUrl, apiConfig } from "@/config/api";
 
-const Login = () => {
-  const navigate = useNavigate();
-  const [showPassword, setShowPassword] = useState(false);
+export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
+  const navigate = useNavigate();
+  const { toast } = useToast();
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError("");
-    setSuccess("");
     setIsLoading(true);
+    setError("");
 
     try {
-      const response = await loginUser({ email, password });
+      const response = await fetch(buildApiUrl(apiConfig.endpoints.auth.login), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
 
-      if (response.success && response.data) {
-        setSuccess("Login successful! Redirecting...");
+      const data = await response.json();
 
-        // Redirect based on user role
-        setTimeout(() => {
-          const userRole = response.data?.role;
-
-          if (userRole === "agency") {
-            navigate("/admin");
-          } else if (userRole === "volunteer") {
-            navigate("/volunteer-dashboard");
-          } else {
-            navigate("/dashboard");
-          }
-        }, 1000);
+      if (response.ok) {
+        // Save JWT token to localStorage
+        localStorage.setItem("token", data.token);
+        
+        // Save user data to localStorage
+        localStorage.setItem("user", JSON.stringify({
+          ...data.user,
+          avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${data.user.name}`
+        }));
+        
+        toast({
+          title: "Login Successful",
+          description: `Welcome back, ${data.user.name}!`,
+        });
+        
+        navigate("/dashboard");
+      } else {
+        setError(data.message || "Invalid email or password");
       }
-    } catch (err: any) {
-      setError(err.message || "Login failed. Please check your credentials.");
-    } finally {
-      setIsLoading(false);
+    } catch (err) {
+      setError("Network error. Please try again.");
     }
+    
+    setIsLoading(false);
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background p-4">
+    <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        {/* Logo */}
-        <div className="mb-8 flex justify-center">
-          <Link to="/" className="flex items-center gap-2">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-emergency-critical">
-              <AlertTriangle className="h-6 w-6 text-emergency-critical-foreground" />
+        <div className="erp-card erp-animate-enter p-8">
+          {/* Logo and Header */}
+          <div className="text-center mb-8">
+            <div className="w-16 h-16 erp-gradient-bg rounded-2xl flex items-center justify-center mx-auto mb-4">
+              <GraduationCap className="w-8 h-8 text-white" />
             </div>
-            <span className="text-2xl font-bold text-foreground">EmergencyHub</span>
-          </Link>
-        </div>
+            <h1 className="text-3xl font-bold mb-2">Welcome Back</h1>
+            <p className="text-muted-foreground">Sign in to your MyCollege ERP account</p>
+          </div>
 
-        <Card className="border-border shadow-lg">
-          <CardHeader className="text-center">
-            <CardTitle className="text-2xl">Welcome Back</CardTitle>
-            <CardDescription>
-              Sign in to access the emergency response platform
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {/* Success Message */}
-            {success && (
-              <div className="mb-4 flex items-center gap-2 rounded-lg bg-green-500/10 p-3 text-green-500">
-                <CheckCircle className="h-5 w-5" />
-                <span className="text-sm">{success}</span>
-              </div>
-            )}
-
-            {/* Error Message */}
+          {/* Login Form */}
+          <form onSubmit={handleLogin} className="space-y-6">
             {error && (
-              <div className="mb-4 flex items-center gap-2 rounded-lg bg-red-500/10 p-3 text-red-500">
-                <XCircle className="h-5 w-5" />
-                <span className="text-sm">{error}</span>
-              </div>
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
             )}
 
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="you@example.com"
-                    value={email}
-                    onChange={(e) => {
-                      setEmail(e.target.value);
-                      setError(""); // Clear error when user types
-                    }}
-                    className="pl-10"
-                    required
-                    disabled={isLoading}
-                  />
-                </div>
+            <div className="space-y-2">
+              <Label htmlFor="email">Email Address</Label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="Enter your email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="pl-10"
+                  required
+                />
               </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    id="password"
-                    type={showPassword ? "text" : "password"}
-                    placeholder="••••••••"
-                    value={password}
-                    onChange={(e) => {
-                      setPassword(e.target.value);
-                      setError(""); // Clear error when user types
-                    }}
-                    className="pl-10 pr-10"
-                    required
-                    disabled={isLoading}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-3 text-muted-foreground hover:text-foreground"
-                    disabled={isLoading}
-                  >
-                    {showPassword ? (
-                      <EyeOff className="h-4 w-4" />
-                    ) : (
-                      <Eye className="h-4 w-4" />
-                    )}
-                  </button>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between text-sm">
-                <label className="flex items-center gap-2">
-                  <input type="checkbox" className="rounded border-input" disabled={isLoading} />
-                  <span className="text-muted-foreground">Remember me</span>
-                </label>
-                <Link
-                  to="/forgot-password"
-                  className={`text-primary hover:underline ${isLoading ? 'pointer-events-none opacity-50' : ''}`}
-                >
-                  Forgot password?
-                </Link>
-              </div>
-
-              <Button type="submit" className="w-full" size="lg" disabled={isLoading}>
-                {isLoading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Signing In...
-                  </>
-                ) : (
-                  "Sign In"
-                )}
-              </Button>
-            </form>
-
-            <div className="mt-6 text-center text-sm text-muted-foreground">
-              Don't have an account?{" "}
-              <Link
-                to="/register"
-                className={`font-medium text-primary hover:underline ${isLoading ? 'pointer-events-none opacity-50' : ''}`}
-              >
-                Create account
-              </Link>
             </div>
-          </CardContent>
-        </Card>
+
+            <div className="space-y-2">
+              <Label htmlFor="password">Password</Label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="Enter your password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="pl-10"
+                  required
+                />
+              </div>
+            </div>
+
+            <Button 
+              type="submit" 
+              className="w-full erp-gradient-bg hover:opacity-90 transition-opacity"
+              disabled={isLoading}
+            >
+              {isLoading ? "Signing in..." : "Sign In"}
+            </Button>
+          </form>
+
+          {/* Demo Credentials */}
+          <div className="mt-8 p-4 bg-muted/50 rounded-xl">
+            <p className="text-sm font-medium mb-2">Demo Credentials:</p>
+            <div className="text-xs space-y-1 text-muted-foreground">
+              <p><strong>Admin:</strong> admin@college.edu</p>
+              <p><strong>Faculty:</strong> faculty@college.edu</p>
+              <p><strong>Student:</strong> student@college.edu</p>
+              <p><strong>Password:</strong> password123</p>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
-};
-
-export default Login;
+}

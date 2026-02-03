@@ -1,147 +1,92 @@
-import { Link, useLocation } from "react-router-dom";
+import { Bell, Search, User, LogOut, Settings, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import {
-  AlertTriangle,
-  Bell,
-  Menu,
-  X,
-  Shield,
-  Map,
-  FileText,
-  BarChart3,
-  Package,
-  LogIn,
-} from "lucide-react";
-import { useState } from "react";
-import { cn } from "@/lib/utils";
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 
 interface NavbarProps {
-  userRole?: "community" | "volunteer" | "agency" | null;
+  user: {
+    name: string;
+    email: string;
+    role: string;
+    avatar?: string;
+  };
+  onLogout: () => void;
 }
 
-const Navbar = ({ userRole = null }: NavbarProps) => {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const location = useLocation();
-
-  const navLinks = [
-    { href: "/", label: "Home", icon: Shield },
-    { href: "/map", label: "Live Map", icon: Map },
-    { href: "/report", label: "Report", icon: FileText },
-    { href: "/resources", label: "Resources", icon: Package },
-    ...(userRole === "agency"
-      ? [{ href: "/analytics", label: "Analytics", icon: BarChart3 }]
-      : []),
-  ];
-
-  const getRoleBadge = () => {
-    if (!userRole) return null;
-    const roleConfig = {
-      community: { label: "Community", variant: "default" as const },
-      volunteer: { label: "Volunteer", variant: "secondary" as const },
-      agency: { label: "Agency", variant: "destructive" as const },
-    };
-    const config = roleConfig[userRole];
-    return <Badge variant={config.variant}>{config.label}</Badge>;
-  };
-
+export function Navbar({ user, onLogout }: NavbarProps) {
   return (
-    <nav className="sticky top-0 z-50 border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60">
-      <div className="container mx-auto px-4">
-        <div className="flex h-16 items-center justify-between">
-          {/* Logo */}
-          <Link to="/" className="flex items-center gap-2">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-emergency-critical">
-              <AlertTriangle className="h-5 w-5 text-emergency-critical-foreground" />
-            </div>
-            <span className="hidden font-semibold text-foreground sm:block">
-              EmergencyHub
-            </span>
-          </Link>
-
-          {/* Desktop Navigation */}
-          <div className="hidden items-center gap-1 md:flex">
-            {navLinks.map((link) => (
-              <Link
-                key={link.href}
-                to={link.href}
-                className={cn(
-                  "flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors",
-                  location.pathname === link.href
-                    ? "bg-primary/10 text-primary"
-                    : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-                )}
-              >
-                <link.icon className="h-4 w-4" />
-                {link.label}
-              </Link>
-            ))}
-          </div>
-
-          {/* Right Section */}
-          <div className="flex items-center gap-3">
-            {getRoleBadge()}
-
-            {userRole && (
-              <Button variant="ghost" size="icon" className="relative">
-                <Bell className="h-5 w-5" />
-                <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-emergency-critical text-[10px] font-bold text-emergency-critical-foreground">
-                  3
-                </span>
-              </Button>
-            )}
-
-            {!userRole && (
-              <Link to="/login">
-                <Button variant="default" size="sm" className="gap-2">
-                  <LogIn className="h-4 w-4" />
-                  <span className="hidden sm:inline">Sign In</span>
-                </Button>
-              </Link>
-            )}
-
-            {/* Mobile Menu Button */}
-            <Button
-              variant="ghost"
-              size="icon"
-              className="md:hidden"
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            >
-              {mobileMenuOpen ? (
-                <X className="h-5 w-5" />
-              ) : (
-                <Menu className="h-5 w-5" />
-              )}
-            </Button>
-          </div>
+    <div className="h-16 bg-surface erp-card border-b border-border/50 px-6 flex items-center justify-between">
+      {/* Search */}
+      <div className="flex-1 max-w-md">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
+            placeholder="Search students, faculty, courses..."
+            className="pl-10 bg-muted/50 border-border/50"
+          />
         </div>
-
-        {/* Mobile Menu */}
-        {mobileMenuOpen && (
-          <div className="border-t border-border pb-4 md:hidden">
-            <div className="flex flex-col gap-1 pt-4">
-              {navLinks.map((link) => (
-                <Link
-                  key={link.href}
-                  to={link.href}
-                  onClick={() => setMobileMenuOpen(false)}
-                  className={cn(
-                    "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
-                    location.pathname === link.href
-                      ? "bg-primary/10 text-primary"
-                      : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-                  )}
-                >
-                  <link.icon className="h-4 w-4" />
-                  {link.label}
-                </Link>
-              ))}
-            </div>
-          </div>
-        )}
       </div>
-    </nav>
-  );
-};
 
-export default Navbar;
+      {/* Right Section */}
+      <div className="flex items-center gap-4">
+        {/* Notifications */}
+        <Button variant="ghost" size="sm" className="relative">
+          <Bell className="w-5 h-5" />
+          <Badge 
+            variant="destructive" 
+            className="absolute -top-1 -right-1 w-5 h-5 p-0 flex items-center justify-center text-xs"
+          >
+            3
+          </Badge>
+        </Button>
+
+        {/* User Menu */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" className="flex items-center gap-2 h-auto p-2">
+              <Avatar className="w-8 h-8">
+                <AvatarImage src={user.avatar} alt={user.name} />
+                <AvatarFallback className="bg-primary text-primary-foreground">
+                  {user.name.split(' ').map(n => n[0]).join('')}
+                </AvatarFallback>
+              </Avatar>
+              <div className="text-left hidden md:block">
+                <p className="text-sm font-medium">{user.name}</p>
+                <p className="text-xs text-muted-foreground capitalize">{user.role}</p>
+              </div>
+              <ChevronDown className="w-4 h-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-56">
+            <div className="px-2 py-1.5">
+              <p className="text-sm font-medium">{user.name}</p>
+              <p className="text-xs text-muted-foreground">{user.email}</p>
+            </div>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem>
+              <User className="w-4 h-4 mr-2" />
+              Profile
+            </DropdownMenuItem>
+            <DropdownMenuItem>
+              <Settings className="w-4 h-4 mr-2" />
+              Settings
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={onLogout} className="text-destructive">
+              <LogOut className="w-4 h-4 mr-2" />
+              Logout
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+    </div>
+  );
+}
