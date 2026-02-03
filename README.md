@@ -35,3 +35,7 @@ This is the **MyCollege ERP System**, built with **React + TypeScript (TSX)**.
    http://localhost:5173
    ```
 
+
+## DevOps Experiment 2
+
+Updated README for DevOps Experiment 2
